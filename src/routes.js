@@ -7,7 +7,7 @@ const {
 } = require('./handler')
 
 /*
-REQUESTING DOCS
+REQUEST DOCS
 
 - untuk menampilkan seluruh buku
     lakukan GET pada '/books'
@@ -23,7 +23,7 @@ REQUESTING DOCS
         "publisher": "Dicoding Indonesia",
         "pageCount": 100,
         "readPage": 25,
-        "reading": false,
+        "reading": false
     }
 
 - untuk mendapatkan buku tertentu
