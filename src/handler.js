@@ -1,46 +1,15 @@
 const { nanoid } = require('nanoid')
 const books = require('./books');
 
-/*
-dan object buku yang diolah server harus mempunyai struktur:
-{
-    "id": "Qbax5Oy7L8WKf74l", // <-
-    "name": "Buku A",
-    "year": 2010,
-    "author": "John Doe",
-    "summary": "Lorem ipsum dolor sit amet",
-    "publisher": "Dicoding Indonesia",
-    "pageCount": 100,
-    "readPage": 25,
-    "finished": false, // <-
-    "reading": false,
-    "insertedAt": "2021-03-04T09:11:44.598Z", // <-
-    "updatedAt": "2021-03-04T09:11:44.598Z" // <-
-}
-(tanda '<-' merupakan objek tambahan yang harus ada di server, selain itu adalah objek default item (book))
-*/
-
 function getAllBooks(request, h) {
-    /*
-    return h.response({
-        status: "success",
-        data: {
-            books: books.map((book)=>(
-                {
-                    id: book.id,
-                    name: book.name,
-                    publisher: book.publisher,
-                }
-            ))
-        }
-    }).code(200);
-    */
-    const { name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt } = request.query;
+    const { name, year, author, summary, 
+        publisher, pageCount, readPage, finished, 
+        reading, insertedAt, updatedAt } = request.query;
     
     var query_keys = Object.keys(request.query);
     var query_total = Object.keys(request.query).length;
 
-    function convertToBoolean(value) {
+    function toBoolean(value) {
         if (value == 1) {
             return true;
         }
@@ -49,7 +18,7 @@ function getAllBooks(request, h) {
         }
     };
 
-    function filterByNameIndex(value) {
+    function getBookIndexBy_name(value) {
         var filtered_item = [];
         for (let item_idx in books) {
             if (String(books[item_idx].name).toLowerCase() === value.toLowerCase()) {
@@ -59,7 +28,7 @@ function getAllBooks(request, h) {
         return filtered_item;
     };
 
-    function filterByFinishedIndex(value) {
+    function getBookIndexBy_finished(value) {
         var filtered_item = [];
         for (let item_idx in books) {
             if (books[item_idx].finished === value) {
@@ -69,7 +38,7 @@ function getAllBooks(request, h) {
         return filtered_item;
     };
 
-    function filterByReadingIndex(value) {
+    function getBookIndexBy_reading(value) {
         var filtered_item = [];
         for (let item_idx in books) {
             if (books[item_idx].reading === value) {
@@ -81,43 +50,42 @@ function getAllBooks(request, h) {
 
     var filter_by_queries_index = [];
 
-    function filterByAllQueriesIndex() {
-        var array_of_arrays = []
+    function getBookIndexBy_allQueries() {
+        var arrays = []
 
-        for (let idx in query_keys) {
-            if (query_keys[idx] === 'name') {
-                array_of_arrays.push(filterByNameIndex(name));
-            }
-            else if (query_keys[idx] === 'finished') {
-                array_of_arrays.push(filterByFinishedIndex(convertToBoolean(finished)));
-            }
-            else if (query_keys[idx] === 'reading') {
-                array_of_arrays.push(filterByReadingIndex(convertToBoolean(reading)));
-            }
+        if (name !== undefined) {
+            arrays.push(getBookIndexBy_name(name));
+        }
+        else if (finished !== undefined) {
+            arrays.push(getBookIndexBy_finished(toBoolean(finished)));
+
+        }
+        else if (reading !== undefined) {
+            arrays.push(getBookIndexBy_reading(toBoolean(reading)));
         };
 
         // menggabungkan semua array menjdai satu array
-        var combined_array = [];
-        for (let i in array_of_arrays) {
-            var array = array_of_arrays[i]
+        var combined_arrays = [];
+        for (let i in arrays) {
+            var array = arrays[i]
             for (let j in array){
-                combined_array.push(array[j])
+                combined_arrays.push(array[j])
             };
         };
 
-        // evaluasi filter untuk mendapatkan data yang telah terfilter dengan beberapa query
-        var filtered_array = []
-        var counts = {};
+        // hapus index yang tidak memenuhi queries filter
+        var filtered_items = [];
         // hitung jumlah setiap item array dalam bentuk object
-        combined_array.forEach(function(i) { counts[i] = (counts[i]||0) + 1;});
-        // jika jumlah nya 2 berarti dia terfilter oleh beberapa query
-        for (i in Object.keys(counts)) {
-            if (Object.values(counts)[i] > (query_total-1)) {
-                filtered_array.push(Object.keys(counts)[i])
-            }
-        }
+        var count_items = {};
+        combined_arrays.forEach(function(i) { count_items[i] = (count_items[i]||0) + 1;});
+        // jika jumlah nya sama denagn jumlah query, berarti dia terfilter oleh beberapa query
+        for (i in Object.keys(count_items)) {
+            if (Object.values(count_items)[i] == query_total) {
+                filtered_items.push(Object.keys(count_items)[i])
+            };
+        };
 
-        return filtered_array;
+        return filtered_items;
     };
 
     function getFilteredBooks(arr) {
@@ -126,41 +94,37 @@ function getAllBooks(request, h) {
         for (let i of arr) {
             filtered_books.push(books[i])
         };
-        return filtered_books.map((book)=>(
-            {
-                id: book.id,
-                name: book.name,
-                publisher: book.publisher,
-            }
-        ));
+        
+        return filtered_books;
     };
 
     if (query_total == 0) {
-        // jika client tidak memasukkan query
-        books
-        return h.response({
-            status: "success",
-            data: {
-                "books": books.map((book)=>(
-                    {
-                        id: book.id,
-                        name: book.name,
-                        publisher: book.publisher,
-                    }
-                ))
-            }
-        }).code(200);
+        var books_result = books;
+        var status = "success";
     }
-    else if (query_total > 0) {
-        // jika client memasukkan query
-        return h.response({
-            "status": "success",
-            "data": {
-                "books": getFilteredBooks(filterByAllQueriesIndex())
-            }
-        }).code(200);
+    else {
+        var books_result = getFilteredBooks(getBookIndexBy_allQueries());
+        var book_items = books_result.length
+        if (book_items === 0) {
+            var status = "success with 0 result";
+        }
+        else {
+            var status = "success";
+        };
     };
     
+    return h.response({
+        status: status,
+        data: {
+            "books": books_result.map((book)=>(
+                {
+                    id: book.id,
+                    name: book.name,
+                    publisher: book.publisher,
+                }
+            ))
+        }
+    }).code(200);
 };
 
 function addBook(request, h) {
@@ -316,4 +280,4 @@ module.exports = {
     getBookById,
     editBookById,
     deleteBookById
-}
+};
