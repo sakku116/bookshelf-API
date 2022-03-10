@@ -25,4 +25,4 @@ This API application just for practice. It doesn't store data from client reques
   delete spesific book by the id.
   
 Also, there is another little functionality that you can do query parameters in `GET` 'localhost:5000/books' (get all book items) request.
-Supported query parameters including `name={string}`, `redading={0 or 1}`, `finished={0 or 1}` that allows you to get all book items filtered with that query parameters.
+Supported query parameters including `name={string}`, `redading={0 or 1}`, `finished={0 or 1}` that allows client to get all book items filtered with that query parameters.
