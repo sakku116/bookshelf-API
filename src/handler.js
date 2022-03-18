@@ -21,7 +21,7 @@ function getAllBooks(request, h) {
     function getBookIndexBy_name(value) {
         var filtered_item = [];
         for (let item_idx in books) {
-            if (String(books[item_idx].name).toLowerCase() === value.toLowerCase()) {
+            if (String(books[item_idx].name).toLowerCase().includes(value.toLowerCase()) === true) {
                 filtered_item.push(item_idx)
             };
         };
